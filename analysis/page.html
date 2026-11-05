@@ -290,7 +290,7 @@ function overview() {
   const reads = [
     { t: `${esc(THEMES[byNeg[0].th])} is the most common source of negative signal: ${byNeg[0].neg.size} of ${n} calls.`,
       sub: `${esc(THEMES[byNeg[1].th])} (${byNeg[1].neg.size}) and ${esc(THEMES[byNeg[2].th])} (${byNeg[2].neg.size}) follow.`, href: `seg-all-t-${thSlug(byNeg[0].th)}` },
-    { t: `${esc(lowest.g)} calls run the coolest, averaging ${sign(lowest.score)} on a −2 to +2 scale.`,
+    { t: `${esc(lowest.g)} calls have the lowest average sentiment: ${sign(lowest.score)} on a −2 to +2 scale.`,
       sub: segRows.map((r) => `${esc(r.g)} ${sign(r.score)}`).join(" · "), href: `seg-${segSlug(lowest.g)}` },
     { t: `Calls that ended positive won ${pct(posWin.won, posWin.n)}% of closed deals; calls that ended negative won ${pct(negWin.won, negWin.n)}%.`,
       sub: `Closed-won or closed-lost opportunities only: ${posWin.n} positive and ${negWin.n} negative calls. CRM outcomes were hidden from the subagents.`, href: "seg-all" },
