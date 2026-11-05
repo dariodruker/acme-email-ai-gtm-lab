@@ -1,0 +1,561 @@
+<title>ACME Email Call Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: the fullstackgtm class page system. 1080px column, square 1px rules, mono labels, navy selection, red brand mark. */
+:root {
+  --ink: #101828; --muted: #536174; --paper: #ffffff; --surface: #f3f6f9; --line: #ccd4dd;
+  --navy: #123252; --navy-hover: #1b466f; --on-navy: #ffffff; --blue: #2563a8; --red: #d74436;
+  --neg: #c2412f; --mix: #b7860f; --neu: #8693a3; --pos: #147a52;
+  --neg-soft: #fbe9e6; --pos-soft: #e8f5ef; --mark: #fdeeb5; --mark-line: #d9a514; --focus: rgba(37,99,168,.28);
+  --sans: "IBM Plex Sans", Arial, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-family: var(--sans); color: var(--ink); font-synthesis: none;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ink: #e7ecf2; --muted: #9ba8b8; --paper: #0e1520; --surface: #162130; --line: #2a3849;
+  --navy: #2d5a8a; --navy-hover: #376aa0; --on-navy: #ffffff; --blue: #7fb2ea; --red: #f07767;
+  --neg: #ee7b69; --mix: #e1b54a; --neu: #8995a6; --pos: #4fbf8d;
+  --neg-soft: #3a1f1c; --pos-soft: #15342a; --mark: #4a3c0e; --mark-line: #d9a514; --focus: rgba(127,178,234,.4);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ink: #e7ecf2; --muted: #9ba8b8; --paper: #0e1520; --surface: #162130; --line: #2a3849;
+  --navy: #2d5a8a; --navy-hover: #376aa0; --on-navy: #ffffff; --blue: #7fb2ea; --red: #f07767;
+  --neg: #ee7b69; --mix: #e1b54a; --neu: #8995a6; --pos: #4fbf8d;
+  --neg-soft: #3a1f1c; --pos-soft: #15342a; --mark: #4a3c0e; --mark-line: #d9a514; --focus: rgba(127,178,234,.4);
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); overflow-x: hidden; font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--paper); }
+button, select { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+.site-header { border-bottom: 1px solid var(--line); background: var(--paper); }
+.site-header .wrap { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.brand-mark { padding-right: 14px; border-right: 2px solid var(--red); font: 600 13px var(--mono); letter-spacing: -.03em; }
+.brand strong, .brand small { display: block; }
+.brand strong { font-size: 14px; }
+.brand small { color: var(--muted); font-size: 12px; }
+.live { display: flex; align-items: center; gap: 8px; color: var(--muted); font: 400 12px var(--mono); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); flex: none; }
+.dot.warn { background: var(--mix); }
+
+.crumbs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; border-bottom: 1px solid var(--line); background: var(--paper); }
+.crumbs .wrap { min-height: 44px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 500 12px var(--mono); color: var(--muted); padding-block: 6px; }
+.crumbs a { color: var(--muted); text-decoration: none; padding: 4px 0; }
+.crumbs a:hover { color: var(--ink); }
+.crumbs .here { color: var(--ink); font-weight: 600; }
+.crumbs .sep { opacity: .5; }
+
+.hero { padding-block: 56px 44px; border-bottom: 1px solid var(--line); }
+.kicker { margin: 0 0 14px; color: var(--blue); font: 500 12px var(--mono); }
+h1 { margin: 0 0 18px; font-size: clamp(34px, 5.4vw, 56px); line-height: 1.04; letter-spacing: -.04em; text-wrap: balance; max-width: 820px; }
+.lede { max-width: 66ch; color: var(--muted); font-size: 17px; line-height: 1.55; margin: 0; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.meta-row { display: flex; flex-wrap: wrap; margin-top: 24px; color: var(--muted); font: 400 12px var(--mono); row-gap: 6px; }
+.meta-row span:not(:last-child)::after { content: "·"; padding: 0 10px; }
+
+.strip { border-bottom: 1px solid var(--line); }
+.strip .wrap { padding-block: 13px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.strip .wrap > span:last-child { color: var(--muted); margin-left: auto; font: 400 12px var(--mono); }
+
+.section { padding-block: 52px; border-bottom: 1px solid var(--line); }
+.section-head { max-width: 700px; margin-bottom: 26px; }
+h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.03em; line-height: 1.12; margin: 0 0 10px; text-wrap: balance; }
+h3 { font-size: 17px; letter-spacing: -.01em; margin: 0 0 12px; }
+.section-head p { margin: 0; color: var(--muted); font-size: 15px; max-width: 66ch; }
+
+.reads { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.reads li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.reads .n { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--line); color: var(--blue); font: 500 11px var(--mono); }
+.reads p { margin: 0; font-size: 15px; max-width: 72ch; }
+.reads p small { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+.go { font: 500 12px var(--mono); color: var(--blue); text-decoration: none; white-space: nowrap; }
+.go:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.table-scroll { overflow-x: auto; border-top: 1px solid var(--ink); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 500 11px var(--mono); color: var(--muted); padding: 10px 10px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th:first-child, td:first-child { padding-left: 0; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--surface); }
+tr.click td:first-child a { font-weight: 600; text-decoration: none; }
+tr.click:hover td:first-child a { text-decoration: underline; text-underline-offset: 3px; }
+td .sub { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.sbar { display: flex; height: 10px; min-width: 140px; background: var(--surface); }
+.sbar i { display: block; height: 100%; }
+.s-negative { background: var(--neg); } .s-mixed { background: var(--mix); } .s-neutral { background: var(--neu); } .s-positive { background: var(--pos); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 14px; color: var(--muted); font: 400 12px var(--mono); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; display: inline-block; }
+.negbar { position: relative; height: 8px; background: var(--surface); min-width: 90px; }
+.negbar i { position: absolute; inset: 0 auto 0 0; background: var(--neg); }
+.heat { display: inline-block; min-width: 46px; padding: 3px 6px; text-align: right; font: 500 12px var(--mono); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 11px var(--mono); padding: 3px 7px; border: 1px solid var(--line); white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; }
+.pill.won { color: var(--pos); border-color: var(--pos); }
+.pill.lost { color: var(--neg); border-color: var(--neg); }
+.tag { font: 500 11px var(--mono); color: var(--muted); }
+
+.tabs { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); margin-bottom: 18px; }
+.tabs a { min-height: 36px; padding: 8px 13px; border-right: 1px solid var(--line); text-decoration: none; font-size: 12px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; }
+.tabs a:last-child { border-right: 0; }
+.tabs a:hover { background: var(--surface); color: var(--ink); }
+.tabs a[aria-current="page"] { background: var(--navy); color: var(--on-navy); }
+
+.seg-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); margin-bottom: 36px; }
+.seg-summary > div { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); }
+.seg-summary dt { font: 500 11px var(--mono); color: var(--muted); margin-bottom: 6px; }
+.seg-summary dd { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.seg-summary dd small { font-size: 13px; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+
+.split { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 40px; align-items: start; }
+.theme-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.theme-list a { display: grid; grid-template-columns: minmax(0, 1fr) 34px 70px; gap: 10px; align-items: center; padding: 9px 8px 9px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 13px; }
+.theme-list a:hover { background: var(--surface); }
+.theme-list a[aria-current="true"] { background: var(--navy); color: var(--on-navy); padding-left: 8px; }
+.theme-list a[aria-current="true"] .negbar { background: rgba(255,255,255,.25); }
+.theme-list .cnt { font: 500 12px var(--mono); text-align: right; }
+.filter-note { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.filter-note a { color: var(--blue); }
+.ev { margin: 6px 0 0; padding: 0; list-style: none; }
+.ev li { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.ev li b { color: var(--ink); font-weight: 600; }
+.ev q { font-style: italic; }
+
+.call-head { padding-block: 40px 30px; border-bottom: 1px solid var(--line); }
+.call-head h1 { font-size: clamp(28px, 4.4vw, 44px); margin-bottom: 12px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-top: 1px solid var(--line); margin-top: 24px; }
+.facts div { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.facts dt { font: 500 11px var(--mono); color: var(--muted); }
+.facts dd { margin: 3px 0 0; font-size: 14px; font-weight: 500; }
+.call-body { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 44px; padding-block: 34px 70px; align-items: start; }
+.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 60px); max-height: calc(100vh - 80px); overflow-y: auto; padding-right: 6px; }
+.panel section + section { margin-top: 28px; }
+.panel p { margin: 0 0 10px; }
+.label { font: 500 11px var(--mono); color: var(--muted); margin: 0 0 8px; display: block; }
+.sent-line { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: 600; text-transform: capitalize; }
+.scale { display: flex; gap: 3px; }
+.scale i { width: 18px; height: 6px; background: var(--surface); border: 1px solid var(--line); }
+.scale i.on { border-color: transparent; }
+.ins { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.ins li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ins button { all: unset; cursor: pointer; display: block; width: 100%; }
+.ins button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ins .top { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 5px; }
+.ins .lab { font-weight: 600; font-size: 14px; display: block; margin-bottom: 3px; }
+.ins .det { color: var(--muted); font-size: 13px; display: block; }
+.ins .q { display: block; margin-top: 6px; font-size: 13px; border-left: 2px solid var(--mark-line); padding-left: 9px; }
+.ins button:hover .lab { color: var(--blue); }
+.sev { font: 500 11px var(--mono); }
+.sev3 { color: var(--neg); } .sev2 { color: var(--mix); } .sev1 { color: var(--muted); }
+.polneg { color: var(--neg); } .polpos { color: var(--pos); }
+.unver { color: var(--neg); font: 500 11px var(--mono); }
+
+.transcript { max-width: 74ch; }
+.turn { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 10px 8px 10px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 80px; transition: background-color .6s; }
+.turn .tn { font: 500 11px var(--mono); color: var(--muted); padding-top: 3px; }
+.turn .who { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.turn .who span { font-weight: 400; color: var(--muted); }
+.turn.side-a .who { color: var(--blue); }
+.turn p { margin: 0; font-size: 14.5px; line-height: 1.6; }
+.turn.hl { background: var(--surface); }
+.turn.hl .tn { color: var(--ink); }
+.turn mark { background: var(--mark); color: inherit; box-shadow: inset 0 -2px 0 var(--mark-line); padding: 1px 0; cursor: pointer; }
+.turn.flash { background: var(--mark); }
+.turn .flags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px; }
+.turn .flags span { font: 500 10.5px var(--mono); color: var(--muted); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 12px; cursor: pointer; }
+
+.method { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.method div { padding: 16px 18px 16px 0; border-bottom: 1px solid var(--line); }
+.method strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.method p { margin: 0; color: var(--muted); font-size: 13px; }
+.method code { font-family: var(--mono); font-size: 12px; background: var(--surface); padding: 1px 4px; }
+footer { padding-block: 26px 40px; color: var(--muted); font: 400 12px var(--mono); }
+
+@media (max-width: 860px) {
+  .split, .call-body { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; max-height: none; overflow: visible; padding-right: 0; }
+  .seg-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hide-sm { display: none; }
+}
+@media (max-width: 520px) {
+  .reads li { grid-template-columns: 30px minmax(0, 1fr); }
+  .reads .go { grid-column: 2; }
+  .strip .wrap > span:last-child { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .turn { transition: none; } html { scroll-behavior: auto; } }
+</style>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#overview">
+      <span class="brand-mark">ACME</span>
+      <span><strong>Call review</strong><small>Sentiment and product insights from customer calls</small></span>
+    </a>
+    <span class="live" id="cov-badge"></span>
+  </div>
+</header>
+<nav class="crumbs" aria-label="Breadcrumb"><div class="wrap" id="crumbs"></div></nav>
+<main id="app"></main>
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const THEMES = {
+  campaigns: "Campaigns", segmentation_scoring: "Segmentation and scoring", nurture_journeys: "Nurture journeys",
+  crm_sync: "CRM sync", attribution_reporting: "Attribution and reporting", forms_landing_pages: "Forms and landing pages",
+  consent_privacy: "Consent and privacy", deliverability: "Deliverability", security_governance: "Security and governance",
+  pricing_packaging: "Pricing and packaging", migration_onboarding: "Migration and onboarding",
+  support_service: "Support and service", usability_adoption: "Usability and adoption", integrations_data: "Integrations and data",
+  competition: "Competition",
+  other: "Other",
+};
+const TYPES = { pain_point: "Pain point", feature_request: "Request", praise: "Praise", objection: "Objection", risk: "Risk", competitive: "Competitive" };
+const SENTS = ["negative", "mixed", "neutral", "positive"];
+const SEGS = ["SMB", "Mid-market", "Enterprise"];
+const segSlug = (s) => s === "all" ? "all" : s.toLowerCase();
+const slugSeg = { all: "all", smb: "SMB", "mid-market": "Mid-market", enterprise: "Enterprise" };
+const thSlug = (t) => t.replace(/_/g, "-");
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = (n, d) => d ? Math.round((100 * n) / d) : 0;
+const fmtDate = (s) => new Date(s + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const fmtMoney = (n) => n == null ? "n/a" : n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}k` : `$${n}`;
+const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toFixed(2);
+
+const callsById = new Map(D.calls.map((c) => [c.id, c]));
+const insByCall = new Map();
+D.insights.forEach((i, idx) => { i.idx = idx; if (!insByCall.has(i.c)) insByCall.set(i.c, []); insByCall.get(i.c).push(i); });
+const analyzed = D.calls.filter((c) => c.status === "analyzed");
+const notAnalyzed = D.calls.filter((c) => c.status !== "analyzed");
+
+function segCalls(seg) { return seg === "all" ? analyzed : analyzed.filter((c) => c.seg === seg); }
+function sentCounts(list) { const o = { negative: 0, mixed: 0, neutral: 0, positive: 0 }; list.forEach((c) => o[c.sent]++); return o; }
+function sbar(list) {
+  const s = sentCounts(list), n = list.length;
+  const title = SENTS.map((k) => `${k} ${s[k]}`).join(", ");
+  return `<div class="sbar" role="img" aria-label="${esc(title)}" title="${esc(title)}">${SENTS.map((k) => s[k] ? `<i class="s-${k}" style="width:${(100 * s[k]) / n}%"></i>` : "").join("")}</div>`;
+}
+function winRate(list) {
+  const closed = list.filter((c) => c.outcome === "Won" || c.outcome === "Lost");
+  return { won: closed.filter((c) => c.outcome === "Won").length, n: closed.length };
+}
+function themeStats(list) {
+  const ids = new Set(list.map((c) => c.id));
+  const m = new Map();
+  for (const i of D.insights) {
+    if (!ids.has(i.c)) continue;
+    if (!m.has(i.th)) m.set(i.th, { th: i.th, calls: new Set(), neg: new Set(), cust: 0, n: 0, sev3: 0 });
+    const t = m.get(i.th); t.calls.add(i.c); t.n++;
+    if (i.pol === "negative") t.neg.add(i.c);
+    if (i.by === "customer") t.cust++;
+    if (i.sev === 3) t.sev3++;
+  }
+  return [...m.values()].sort((a, b) => b.calls.size - a.calls.size);
+}
+const sentPill = (s) => `<span class="pill"><i class="s-${s}"></i>${s}</span>`;
+const outcomePill = (o) => o === "Won" ? `<span class="pill won">Won</span>` : o === "Lost" ? `<span class="pill lost">Lost</span>` : `<span class="tag">${esc(o || "No deal")}</span>`;
+const legend = () => `<div class="legend">${SENTS.map((s) => `<span><i class="s-${s}"></i>${s}</span>`).join("")}</div>`;
+
+// ---------- Level 1: overview ----------
+function overview() {
+  const n = analyzed.length;
+  const s = sentCounts(analyzed);
+  const dates = D.calls.map((c) => c.date).sort();
+  const themes = themeStats(analyzed);
+  const byNeg = [...themes].filter((t) => t.th !== "other").sort((a, b) => b.neg.size - a.neg.size);
+  const segRows = SEGS.map((g) => ({ g, list: segCalls(g) })).map((r) => ({ ...r, score: avg(r.list.map((c) => c.score)) }));
+  const lowest = [...segRows].sort((a, b) => a.score - b.score)[0];
+
+  // Sentiment against outcome, closed deals only.
+  const bySent = SENTS.map((k) => ({ k, ...winRate(analyzed.filter((c) => c.sent === k)) }));
+  const posWin = winRate(analyzed.filter((c) => c.score > 0)), negWin = winRate(analyzed.filter((c) => c.score < 0));
+  const sellerShare = pct(D.insights.filter((i) => i.by === "seller").length, D.insights.length);
+  const topSev = [...themes].sort((a, b) => b.sev3 - a.sev3)[0];
+
+  const reads = [
+    { t: `${esc(THEMES[byNeg[0].th])} is the most common source of negative signal: ${byNeg[0].neg.size} of ${n} calls.`,
+      sub: `${esc(THEMES[byNeg[1].th])} (${byNeg[1].neg.size}) and ${esc(THEMES[byNeg[2].th])} (${byNeg[2].neg.size}) follow.`, href: `seg-all-t-${thSlug(byNeg[0].th)}` },
+    { t: `${esc(lowest.g)} calls run the coolest, averaging ${sign(lowest.score)} on a −2 to +2 scale.`,
+      sub: segRows.map((r) => `${esc(r.g)} ${sign(r.score)}`).join(" · "), href: `seg-${segSlug(lowest.g)}` },
+    { t: `Calls that ended positive won ${pct(posWin.won, posWin.n)}% of closed deals; calls that ended negative won ${pct(negWin.won, negWin.n)}%.`,
+      sub: `Closed-won or closed-lost opportunities only: ${posWin.n} positive and ${negWin.n} negative calls. CRM outcomes were hidden from the subagents.`, href: "seg-all" },
+    { t: `${esc(THEMES[topSev.th])} carries the most deal-blocking issues: ${topSev.sev3} rated severity 3.`,
+      sub: `${sellerShare}% of all insights were raised by the ACME rep rather than the customer, so those are tagged separately.`, href: `seg-all-t-${thSlug(topSev.th)}` },
+  ];
+
+  const segTable = `
+    <div class="table-scroll"><table>
+      <thead><tr><th>Segment</th><th class="r">Calls</th><th>Sentiment mix</th><th class="r">Avg score</th><th class="r hide-sm">Negative</th><th class="r">Win rate</th></tr></thead>
+      <tbody>${[{ g: "all", list: analyzed, score: avg(analyzed.map((c) => c.score)) }, ...segRows].map((r) => {
+        const sc = sentCounts(r.list), w = winRate(r.list);
+        return `<tr class="click" data-href="seg-${segSlug(r.g)}"><td><a href="#seg-${segSlug(r.g)}">${r.g === "all" ? "All segments" : esc(r.g)}</a></td>
+          <td class="r">${r.list.length}</td><td>${sbar(r.list)}</td><td class="r">${sign(r.score)}</td>
+          <td class="r hide-sm">${pct(sc.negative + sc.mixed, r.list.length)}%<span class="sub">neg + mixed</span></td>
+          <td class="r">${pct(w.won, w.n)}%<span class="sub">${w.won} of ${w.n} closed</span></td></tr>`;
+      }).join("")}</tbody></table></div>`;
+
+  const segSize = Object.fromEntries(SEGS.map((g) => [g, segCalls(g).length]));
+  const themeTable = `
+    <div class="table-scroll"><table>
+      <thead><tr><th>Theme</th><th class="r">Calls</th><th>Negative share</th>${SEGS.map((g) => `<th class="r hide-sm">${esc(g)}</th>`).join("")}<th class="r">Customer raised</th></tr></thead>
+      <tbody>${themes.map((t) => {
+        const ids = [...t.calls];
+        const segPct = SEGS.map((g) => pct(ids.filter((id) => callsById.get(id).seg === g).length, segSize[g]));
+        const np = pct(t.neg.size, t.calls.size);
+        return `<tr class="click" data-href="seg-all-t-${thSlug(t.th)}"><td><a href="#seg-all-t-${thSlug(t.th)}">${esc(THEMES[t.th])}</a></td>
+          <td class="r">${t.calls.size}</td>
+          <td><div style="display:flex;align-items:center;gap:8px"><div class="negbar" style="flex:1"><i style="width:${np}%"></i></div><span class="mono num" style="font-size:12px;width:34px;text-align:right">${np}%</span></div></td>
+          ${segPct.map((p) => `<td class="r hide-sm"><span class="heat" style="background:color-mix(in srgb, var(--blue) ${Math.min(60, p)}%, transparent)">${p}%</span></td>`).join("")}
+          <td class="r">${pct(t.cust, t.n)}%</td></tr>`;
+      }).join("")}</tbody></table></div>`;
+
+  const outcomeTable = `
+    <div class="table-scroll"><table>
+      <thead><tr><th>Call sentiment</th><th class="r">Calls on closed deals</th><th class="r">Won</th><th class="r">Win rate</th></tr></thead>
+      <tbody>${bySent.map((r) => `<tr><td>${sentPill(r.k)}</td><td class="r">${r.n}</td><td class="r">${r.won}</td><td class="r">${pct(r.won, r.n)}%</td></tr>`).join("")}</tbody>
+    </table></div>`;
+
+  return `
+  <section class="hero"><div class="wrap">
+    <p class="kicker">ACME Email · class slice · ${fmtDate(dates[0])} to ${fmtDate(dates[dates.length - 1])}</p>
+    <h1>What ${n} customer calls say about ACME Email</h1>
+    <p class="lede">${pct(s.negative + s.mixed, n)}% of calls ended with the customer <strong>negative or mixed</strong> on ACME. The biggest source of friction is <strong>${esc(THEMES[byNeg[0].th]).toLowerCase()}</strong>, and the gap shows up in win rates. Pick a segment or theme to see the calls behind each number.</p>
+    <div class="meta-row"><span>${D.calls.length} calls</span><span>${D.insights.length} insights</span><span>${D.meta.batches} Sonnet batches</span><span>SQLite</span></div>
+  </div></section>
+  ${coverageStrip()}
+  <section class="section"><div class="wrap">
+    <div class="section-head"><h2>Four reads</h2><p>Computed from the database on build. Each one links to the calls behind it.</p></div>
+    <ol class="reads">${reads.map((r, i) => `<li><span class="n">${i + 1}</span><p>${r.t}<small>${r.sub}</small></p><a class="go" href="#${r.href}">See calls</a></li>`).join("")}</ol>
+  </div></section>
+  <section class="section"><div class="wrap">
+    <div class="section-head"><h2>Sentiment by segment</h2><p>Customer attitude toward ACME at the end of each call, scored by the subagent from the transcript alone. Select a segment to see its calls.</p></div>
+    ${legend()}${segTable}
+  </div></section>
+  <section class="section"><div class="wrap">
+    <div class="section-head"><h2>Product insights</h2><p>Every insight is tagged to one product theme and backed by a verbatim quote. Segment columns show the share of that segment's calls that raised the theme.</p></div>
+    ${themeTable}
+  </div></section>
+  <section class="section"><div class="wrap">
+    <div class="section-head"><h2>Sentiment against deal outcome</h2><p>Joined in SQLite after analysis. The subagents never saw stage, outcome or competitor, so this is an independent check on the sentiment read.</p></div>
+    ${outcomeTable}
+  </div></section>
+  ${methodSection()}`;
+}
+
+function coverageStrip() {
+  const m = D.meta, ev = m.evidence || {};
+  const ok = analyzed.length === m.expectedCalls;
+  return `<div class="strip"><div class="wrap"><span class="dot ${ok ? "" : "warn"}"></span>
+    <span><strong>${analyzed.length} of ${m.expectedCalls}</strong> calls analyzed${notAnalyzed.length ? `, ${notAnalyzed.length} failed or missing (listed below)` : ""}.
+    ${ev.verified + ev.relocated} of ${ev.insights} quotes matched the transcript verbatim.</span>
+    <span>coverage-manifest.json</span></div></div>`;
+}
+
+function methodSection() {
+  const ev = D.meta.evidence || {};
+  return `<section class="section"><div class="wrap">
+    <div class="section-head"><h2>How this was built</h2><p>One prompt, a small pipeline, and a database you can query.</p></div>
+    <div class="method">
+      <div><strong>Slice and checksums</strong><p>${D.meta.expectedCalls} call IDs from <code>class-slice.txt</code>, each verified against its manifest SHA-256 before use.</p></div>
+      <div><strong>${D.meta.batches} Sonnet subagents</strong><p>20 calls each, run in parallel. Each wrote structured JSON with turn numbers and verbatim quotes.</p></div>
+      <div><strong>Machine-checked evidence</strong><p>${ev.verified} quotes found in the cited turn, ${ev.relocated} found in a different turn and re-pointed, ${ev.unverified} not found and flagged.</p></div>
+      <div><strong>SQLite</strong><p><code>call-analysis.sqlite</code> holds calls, turns, analysis, insights, coverage and CRM joins.</p></div>
+    </div>
+    ${notAnalyzed.length ? `<h3 style="margin-top:28px">Not analyzed</h3><ul>${notAnalyzed.map((c) => `<li class="mono">${c.id}: ${esc(c.status)} (${esc(c.reason)})</li>`).join("")}</ul>` : ""}
+  </div></section>`;
+}
+
+// ---------- Level 2: segment drill-down ----------
+function segmentView(segKey, themeKey, sentFilter) {
+  const seg = slugSeg[segKey];
+  const all = segCalls(seg);
+  const themes = themeStats(all);
+  let list = all;
+  if (themeKey) { const ids = new Set(D.insights.filter((i) => i.th === themeKey).map((i) => i.c)); list = list.filter((c) => ids.has(c.id)); }
+  if (sentFilter) list = list.filter((c) => c.sent === sentFilter);
+  list = [...list].sort((a, b) => a.score - b.score || b.date.localeCompare(a.date));
+  const w = winRate(all), sc = sentCounts(all);
+  const segName = seg === "all" ? "All segments" : seg;
+  const base = (s, t) => `seg-${segSlug(s)}${t ? `-t-${thSlug(t)}` : ""}`;
+
+  const rows = list.map((c) => {
+    const ins = (insByCall.get(c.id) || []).filter((i) => !themeKey || i.th === themeKey);
+    const show = themeKey ? ins : ins.slice(0, 2);
+    return `<tr class="click" data-href="call-${c.id.slice(5)}">
+      <td><a href="#call-${c.id.slice(5)}">${esc(c.acct)}</a><span class="sub mono">${c.id} · ${esc(c.seg)}</span>
+        <ul class="ev">${show.map((i) => `<li><b>${esc(i.lab)}</b>${themeKey ? ` <q>${esc(i.qt)}</q>` : ""}</li>`).join("")}</ul></td>
+      <td class="hide-sm">${esc(c.type)}<span class="sub">${fmtDate(c.date)}</span></td>
+      <td>${sentPill(c.sent)}</td>
+      <td>${outcomePill(c.outcome)}</td></tr>`;
+  }).join("");
+
+  const tabs = ["all", ...SEGS].map((s) => `<a href="#${base(s, themeKey)}" ${s === seg ? 'aria-current="page"' : ""}>${s === "all" ? "All" : esc(s)}</a>`).join("");
+  const themeList = themes.map((t) => {
+    const np = pct(t.neg.size, t.calls.size), on = t.th === themeKey;
+    return `<li><a href="#${on ? base(seg) : base(seg, t.th)}" aria-current="${on}"><span>${esc(THEMES[t.th])}</span><span class="cnt">${t.calls.size}</span><span class="negbar" title="${np}% negative"><i style="width:${np}%"></i></span></a></li>`;
+  }).join("");
+  const sentChips = SENTS.map((k) => `<a href="#" data-sent="${k}" ${sentFilter === k ? 'aria-current="page"' : ""}>${k} ${sentCounts(themeKey ? all.filter((c) => (insByCall.get(c.id) || []).some((i) => i.th === themeKey)) : all)[k]}</a>`).join("");
+
+  return `
+  <section class="hero" style="padding-block:40px 32px"><div class="wrap">
+    <p class="kicker">Segment drill-down</p>
+    <h1>${esc(segName)}${themeKey ? ` · ${esc(THEMES[themeKey])}` : ""}</h1>
+    <nav class="tabs" aria-label="Segment">${tabs}</nav>
+    <dl class="seg-summary">
+      <div><dt>Calls</dt><dd>${all.length}</dd></div>
+      <div><dt>Avg sentiment</dt><dd>${sign(avg(all.map((c) => c.score)))} <small>of ±2</small></dd></div>
+      <div><dt>Negative or mixed</dt><dd>${pct(sc.negative + sc.mixed, all.length)}%</dd></div>
+      <div><dt>Win rate, closed</dt><dd>${pct(w.won, w.n)}% <small>${w.won}/${w.n}</small></dd></div>
+    </dl>
+    ${legend()}${sbar(all)}
+  </div></section>
+  <section class="section" style="padding-top:36px"><div class="wrap split">
+    <div><h3>Themes in ${esc(segName)}</h3><p class="tag" style="margin:-6px 0 12px">Calls raising each theme. Bar shows negative share. Select to filter.</p><ul class="theme-list">${themeList}</ul></div>
+    <div style="min-width:0">
+      <h3>${list.length} contributing call${list.length === 1 ? "" : "s"}</h3>
+      <p class="filter-note">${themeKey ? `Filtered to ${esc(THEMES[themeKey])}, with the quote behind each. <a href="#${base(seg)}">Clear theme</a>` : "Sorted from most negative. Top two insights shown per call."}</p>
+      <nav class="tabs" aria-label="Sentiment filter" id="sent-tabs"><a href="#" data-sent="" ${!sentFilter ? 'aria-current="page"' : ""}>All</a>${sentChips}</nav>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Account and evidence</th><th class="hide-sm">Call</th><th>Sentiment</th><th>Deal</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="4">No calls match this filter.</td></tr>`}</tbody>
+      </table></div>
+    </div>
+  </div></section>`;
+}
+
+// ---------- Level 3: call drill-down ----------
+function callView(id) {
+  const c = callsById.get(id);
+  if (!c) return `<section class="section"><div class="wrap"><h2>Call not found</h2><p><a href="#overview">Back to overview</a></p></div></section>`;
+  const ins = insByCall.get(id) || [];
+  const hlTurns = new Map();
+  ins.forEach((i) => i.turns.concat(i.qTurn ? [i.qTurn] : []).forEach((t) => { if (!hlTurns.has(t)) hlTurns.set(t, new Set()); hlTurns.get(t).add(i.idx); }));
+  const sTurns = new Set(c.sTurns || []), noise = new Set(c.noise || []);
+
+  const turnHtml = c.turns.map(([who, role, text, side], k) => {
+    const n = k + 1;
+    const spans = ins.filter((i) => i.qTurn === n && i.qs != null).sort((a, b) => a.qs - b.qs);
+    let out = "", pos = 0;
+    for (const i of spans) {
+      if (i.qs < pos) continue;
+      out += esc(text.slice(pos, i.qs)) + `<mark data-ins="${i.idx}" title="${esc(i.lab)}">${esc(text.slice(i.qs, i.qe))}</mark>`;
+      pos = i.qe;
+    }
+    out += esc(text.slice(pos));
+    const flags = [];
+    if (hlTurns.has(n)) flags.push(`Evidence: ${[...hlTurns.get(n)].map((x) => esc(D.insights[x].lab)).join("; ")}`);
+    if (sTurns.has(n)) flags.push("Sentiment signal");
+    if (noise.has(n)) flags.push("Speaker label looks wrong");
+    return `<div class="turn side-${side} ${hlTurns.has(n) ? "hl" : ""}" id="t${n}" data-turn="${n}">
+      <span class="tn">T${n}</span><div><div class="who">${esc(who)} <span>${esc(role)}${side === "a" ? " · ACME" : ""}</span></div><p>${out}</p>
+      ${flags.length ? `<div class="flags">${flags.map((f) => `<span>${f}</span>`).join("")}</div>` : ""}</div></div>`;
+  }).join("");
+
+  const scoreBar = [-2, -1, 0, 1, 2].map((v) => `<i class="${c.score != null && ((c.score < 0 && v < 0 && v >= c.score) || (c.score > 0 && v > 0 && v <= c.score) || (v === 0 && c.score === 0)) ? `on s-${c.sent}` : ""}"></i>`).join("");
+  const comps = [...new Set([...(c.comps || []), ...(c.crmComp ? [c.crmComp] : [])])];
+
+  const panel = c.status !== "analyzed" ? `<section><p class="unver">Not analyzed: ${esc(c.reason)}</p></section>` : `
+    <section><span class="label">Summary</span><p>${esc(c.summ)}</p>${c.next ? `<p class="tag">Next step: ${esc(c.next)}</p>` : ""}</section>
+    <section><span class="label">Customer sentiment</span>
+      <div class="sent-line"><span class="scale" aria-hidden="true">${scoreBar}</span>${esc(c.sent)} <span class="mono tag">${c.score > 0 ? "+" : ""}${c.score}</span></div>
+      <p style="color:var(--muted);font-size:13px">${esc(c.rat)} ${(c.sTurns || []).map((t) => `<a class="go" href="#call-${id.slice(5)}" data-turn="${t}">T${t}</a>`).join(" ")}</p></section>
+    <section><span class="label">Insights · ${ins.length}</span>
+      <ul class="ins">${ins.map((i) => `<li><button type="button" data-turn="${i.qTurn || i.turns[0] || 1}" data-ins="${i.idx}">
+        <span class="top"><span class="tag">${esc(THEMES[i.th])}</span><span class="tag ${i.pol === "negative" ? "polneg" : i.pol === "positive" ? "polpos" : ""}">${esc(TYPES[i.ty])}</span>
+          <span class="sev sev${i.sev}">sev ${i.sev}</span><span class="tag">${i.by === "seller" ? "rep raised" : "customer raised"}</span></span>
+        <span class="lab">${esc(i.lab)}</span><span class="det">${esc(i.det)}</span>
+        <span class="q">“${esc(i.qt)}” <span class="mono tag">${i.qTurn ? `T${i.qTurn}` : ""}</span>${i.st === "unverified" ? ` <span class="unver">quote not found in transcript</span>` : ""}</span>
+      </button></li>`).join("")}</ul></section>`;
+
+  return `
+  <section class="call-head"><div class="wrap">
+    <p class="kicker">${esc(c.type)} · ${fmtDate(c.date)} · ${c.id}</p>
+    <h1>${esc(c.acct)}</h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${c.sent ? sentPill(c.sent) : ""}${outcomePill(c.outcome)}</div>
+    <dl class="facts">
+      <div><dt>Segment</dt><dd><a href="#seg-${segSlug(c.seg)}">${esc(c.seg)}</a></dd></div>
+      <div><dt>Industry · region</dt><dd>${esc(c.ind)} · ${esc(c.reg)}</dd></div>
+      <div><dt>Duration</dt><dd>${c.dur} min · ${c.turns.length} turns</dd></div>
+      <div><dt>Deal</dt><dd>${esc(c.stage || "None")} · ${fmtMoney(c.amt)}</dd></div>
+      <div><dt>Competitors</dt><dd>${comps.length ? comps.map(esc).join(", ") : "None named"}</dd></div>
+    </dl>
+  </div></section>
+  <div class="wrap call-body">
+    <aside class="panel">${panel}</aside>
+    <div style="min-width:0">
+      <label class="toggle"><input type="checkbox" id="only-ev"> Show evidence turns only</label>
+      <div class="transcript" id="transcript">${turnHtml}</div>
+    </div>
+  </div>`;
+}
+
+// ---------- Router ----------
+let sentFilter = "";
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  const app = document.getElementById("app"), crumbs = document.getElementById("crumbs");
+  let m;
+  const home = `<a href="#overview">Overview</a>`, sep = `<span class="sep">/</span>`;
+  if ((m = h.match(/^call-(\d{5})$/))) {
+    const c = callsById.get(`call_${m[1]}`);
+    app.innerHTML = callView(`call_${m[1]}`);
+    crumbs.innerHTML = c ? `${home}${sep}<a href="#seg-${segSlug(c.seg)}">${esc(c.seg)}</a>${sep}<span class="here">${esc(c.acct)} · ${c.id}</span>` : home;
+    window.scrollTo(0, 0);
+  } else if ((m = h.match(/^seg-(all|smb|mid-market|enterprise)(?:-t-([a-z-]+))?$/))) {
+    const th = m[2] ? m[2].replace(/-/g, "_") : null;
+    app.innerHTML = segmentView(m[1], THEMES[th] ? th : null, sentFilter);
+    const segName = slugSeg[m[1]] === "all" ? "All segments" : slugSeg[m[1]];
+    crumbs.innerHTML = `${home}${sep}${th ? `<a href="#seg-${m[1]}">${esc(segName)}</a>${sep}<span class="here">${esc(THEMES[th])}</span>` : `<span class="here">${esc(segName)}</span>`}`;
+  } else {
+    sentFilter = "";
+    app.innerHTML = overview();
+    crumbs.innerHTML = `<span class="here">Overview</span>`;
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const sent = e.target.closest("[data-sent]");
+  if (sent) { e.preventDefault(); sentFilter = sent.dataset.sent; const y = window.scrollY; route(); window.scrollTo(0, y); return; }
+  const turnLink = e.target.closest("[data-turn]");
+  if (turnLink && !turnLink.classList.contains("turn")) {
+    e.preventDefault();
+    const only = document.getElementById("only-ev");
+    if (only && only.checked) { only.checked = false; applyFilter(); }
+    const el = document.getElementById("t" + turnLink.dataset.turn);
+    if (el) {
+      el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400);
+    }
+    return;
+  }
+  const mark = e.target.closest("mark[data-ins]");
+  if (mark) { const b = document.querySelector(`.ins button[data-ins="${mark.dataset.ins}"]`); if (b) { b.scrollIntoView({ block: "nearest" }); b.focus(); } return; }
+  const row = e.target.closest("tr.click");
+  if (row && !e.target.closest("a")) { sentFilter = row.dataset.href.startsWith("seg") ? sentFilter : sentFilter; location.hash = row.dataset.href; }
+});
+function applyFilter() {
+  const on = document.getElementById("only-ev")?.checked;
+  document.querySelectorAll(".turn").forEach((t) => { t.hidden = on && !t.classList.contains("hl"); });
+}
+document.addEventListener("change", (e) => { if (e.target.id === "only-ev") applyFilter(); });
+window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#seg")) sentFilter = ""; route(); });
+
+document.getElementById("cov-badge").innerHTML = `<span class="dot ${analyzed.length === D.meta.expectedCalls ? "" : "warn"}"></span>${analyzed.length} / ${D.meta.expectedCalls} calls analyzed`;
+document.getElementById("foot").textContent = `Synthetic data. ACME Email and its customers are fictional. Built ${D.meta.builtAt.slice(0, 10)} from call-analysis.sqlite.`;
+route();
+</script>
