@@ -49,6 +49,7 @@ Every script takes `--config <file>` and defaults to `analysis/config.json`.
 ## Guarantees
 
 - Every slice call's SHA-256 is checked against `manifest.jsonl` before use, and again in verify.
+- Turns are split on any line that starts with `Name (Role):`, so transcripts with blank-line or single-line-break turns both parse. Prepare stops if any call parses into fewer than 4 turns.
 - Fields in `hideFromSubagents` never reach subagents. Verify checks the batch files.
 - Every insight quote is machine-checked against the transcript: `verified` (in the cited turn), `relocated` (found in another turn, re-pointed) or `unverified` (flagged on the page and failed by verify).
 - Every slice call lands in `coverage` as `analyzed`, `failed` or `missing`. `calls:load` exits non-zero unless all are analyzed.

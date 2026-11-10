@@ -53,10 +53,18 @@ export function sliceIds(cfg) {
   return fs.readFileSync(cfg.paths.slice, "utf8").split("\n").map((s) => s.trim()).filter(Boolean);
 }
 
-// A transcript is paragraphs separated by blank lines: "Name (Role): text".
+// A transcript is a sequence of "Name (Role): text" turns. Turns may be separated by blank lines or by
+// single line breaks (some transcripts use each format), so a new turn starts at any line with a speaker prefix.
+const SPEAKER = /^([^:(\n]+?)\s*\(([^)]+)\):\s*([\s\S]*)$/;
 export function parseTurns(text) {
-  return text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p, i) => {
-    const m = p.match(/^([^:(]+?)\s*\(([^)]+)\):\s*([\s\S]*)$/);
+  const blocks = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) { if (blocks.length) blocks[blocks.length - 1].push(""); continue; }
+    if (SPEAKER.test(line.trim()) || !blocks.length) blocks.push([line]);
+    else blocks[blocks.length - 1].push(line);
+  }
+  return blocks.map((b) => b.join("\n").trim()).filter(Boolean).map((p, i) => {
+    const m = p.match(SPEAKER);
     return m
       ? { turn: i + 1, speaker: m[1].trim(), role: m[2].trim(), text: m[3].trim() }
       : { turn: i + 1, speaker: "Unknown", role: "Unknown", text: p };

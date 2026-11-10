@@ -21,7 +21,14 @@ const inventory = {
   hiddenFromSubagents: [...hidden],
   themesApproved: cfg.themesApprovedFor === cfg.dataDir,
 };
+// A call that parses into very few turns usually means an unexpected transcript format.
+const suspect = calls.filter((c) => c.turns.length < 4 || c.turns.some((t) => t.speaker === "Unknown"));
+inventory.suspectCalls = suspect.map((c) => `${c.id} (${c.turns.length} turns)`);
 console.log(JSON.stringify(inventory, null, 2));
+if (suspect.length) {
+  console.error(`FAIL: ${suspect.length} call(s) did not parse into speaker turns. Check the transcript format.`);
+  process.exit(4);
+}
 if (hasFlag("--dry-run")) process.exit(0);
 
 const work = cfg.paths.work;

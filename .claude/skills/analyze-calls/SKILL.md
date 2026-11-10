@@ -14,7 +14,7 @@ Follow `CLAUDE.md`: each run writes to its own `outputDir` under `reports/` and 
 
 1. Read `CFG`. Confirm `outputDir` does not already contain `call-analysis.sqlite`. If it does, stop and ask for a new `outputDir`.
 2. If `dataDir` is `data/generated`, run `npm run inventory`.
-3. Run `npm run calls:prepare -- --config CFG --dry-run`. It checks every slice ID exists and every checksum matches, and prints counts by segment and call type. Stop on any error and report it.
+3. Run `npm run calls:prepare -- --config CFG --dry-run`. It checks every slice ID exists and every checksum matches, and prints counts by segment and call type. It also fails if any call parses into fewer than 4 speaker turns (`suspectCalls`), which means an unexpected transcript format. Stop on any error and report it.
 4. Show the user a short inventory: calls, batches, batch size, hidden fields, output folder.
 
 ## 2. Themes (new data only)
