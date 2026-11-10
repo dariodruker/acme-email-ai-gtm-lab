@@ -1,10 +1,13 @@
-// Step 4: read the SQLite results and write a self-contained HTML page for the artifact.
+// Step 5: read the SQLite results and write a self-contained HTML page for the artifact.
+//   node analysis/build-page.mjs [--config <file>] [--overwrite]
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { ROOT, DATA, readJsonl } from "./lib.mjs";
+import { ROOT, loadConfig, readJsonl, guardOverwrite } from "./lib.mjs";
 
-const db = new DatabaseSync(path.join(ROOT, "reports/call-analysis.sqlite"), { readOnly: true });
+const cfg = loadConfig();
+guardOverwrite(cfg.paths.page);
+const db = new DatabaseSync(cfg.paths.db, { readOnly: true });
 const meta = Object.fromEntries(db.prepare("SELECT key, value FROM run_meta").all().map((r) => [r.key, JSON.parse(r.value)]));
 
 const calls = db.prepare(`
@@ -16,7 +19,8 @@ const calls = db.prepare(`
   JOIN coverage cov ON cov.call_id = c.id LEFT JOIN call_analysis ca ON ca.call_id = c.id
   ORDER BY c.occurred_at`).all();
 // A speaker is on the customer side when their name is a CRM contact; role labels carry transcription noise.
-const contactNames = new Set(readJsonl(path.join(DATA, "contacts.jsonl")).map((p) => p.name));
+const contactsFile = path.join(cfg.paths.data, "contacts.jsonl");
+const contactNames = new Set(fs.existsSync(contactsFile) ? readJsonl(contactsFile).map((p) => p.name) : []);
 const turnsBy = new Map();
 for (const t of db.prepare("SELECT call_id, turn, speaker, role, text FROM turns ORDER BY call_id, turn").all()) {
   if (!turnsBy.has(t.call_id)) turnsBy.set(t.call_id, []);
@@ -25,7 +29,10 @@ for (const t of db.prepare("SELECT call_id, turn, speaker, role, text FROM turns
 const insights = db.prepare("SELECT * FROM insights ORDER BY call_id, severity DESC, id").all();
 
 const data = {
-  meta: { ...meta, builtAt: new Date().toISOString(), batches: new Set(calls.map((c) => c.batch_id)).size },
+  meta: {
+    ...meta, builtAt: new Date().toISOString(), batches: meta.batches ?? new Set(calls.map((c) => c.batch_id)).size,
+    name: cfg.name, themes: Object.fromEntries(cfg.themes.map((t) => [t.key, t.label])), scale: cfg.sentimentScale,
+  },
   calls: calls.map((c) => ({
     id: c.id, acct: c.acct, seg: c.segment, ind: c.industry, reg: c.region, type: c.call_type,
     date: c.occurred_at.slice(0, 10), dur: c.duration_min, stage: c.stage, outcome: c.outcome, crmComp: c.competitor,
@@ -39,8 +46,11 @@ const data = {
   })),
 };
 
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const template = fs.readFileSync(path.join(ROOT, "analysis/page.html"), "utf8");
 const json = JSON.stringify(data).replace(/</g, "\\u003c");
-const out = path.join(ROOT, "reports/acme-call-insights.html");
-fs.writeFileSync(out, template.replace("__DATA__", () => json));
-console.log(`wrote ${out} (${(fs.statSync(out).size / 1e6).toFixed(2)} MB)`);
+const html = template
+  .replace("__TITLE__", () => esc(cfg.pageTitle ?? "Call Review"))
+  .replace("__DATA__", () => json);
+fs.writeFileSync(cfg.paths.page, html);
+console.log(`wrote ${path.relative(ROOT, cfg.paths.page)} (${(fs.statSync(cfg.paths.page).size / 1e6).toFixed(2)} MB)`);

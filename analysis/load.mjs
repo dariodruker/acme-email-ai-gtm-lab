@@ -1,21 +1,25 @@
 // Step 3: validate subagent results against the transcripts and load everything into SQLite.
+//   node analysis/load.mjs [--config <file>] [--overwrite]
 // Nothing is dropped silently: every slice call ends up as analyzed, failed or missing in `coverage`.
+// Exits non-zero unless every call in the slice is analyzed.
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { ROOT, WORK, loadCorpus } from "./lib.mjs";
+import { ROOT, loadConfig, loadCorpus, guardOverwrite } from "./lib.mjs";
 
-const THEMES = ["campaigns", "segmentation_scoring", "nurture_journeys", "crm_sync", "attribution_reporting",
-  "forms_landing_pages", "consent_privacy", "deliverability", "security_governance", "pricing_packaging",
-  "migration_onboarding", "support_service", "usability_adoption", "integrations_data", "competition", "other"];
-// Known near-misses from subagent output, normalized instead of dropped to "other".
-const THEME_ALIASES = { competitive: "competition", competitor: "competition", competitors: "competition" };
+const cfg = loadConfig();
+const THEMES = cfg.themeKeys;
+const THEME_ALIASES = cfg.themeAliases ?? {};
+const FALLBACK_THEME = THEMES.includes("other") ? "other" : THEMES[THEMES.length - 1];
 const TYPES = ["pain_point", "feature_request", "praise", "objection", "risk", "competitive"];
-const SENTIMENTS = ["positive", "mixed", "neutral", "negative"];
+const SENTIMENTS = cfg.sentimentScale.labels;
+const { min: SMIN, max: SMAX } = cfg.sentimentScale;
 
-const DB_PATH = path.join(ROOT, "reports/call-analysis.sqlite");
-const manifest = JSON.parse(fs.readFileSync(path.join(WORK, "manifest.json"), "utf8"));
-const calls = new Map(loadCorpus().map((c) => [c.id, c]));
+const DB_PATH = cfg.paths.db;
+guardOverwrite(DB_PATH);
+guardOverwrite(cfg.paths.coverage);
+const manifest = JSON.parse(fs.readFileSync(path.join(cfg.paths.work, "manifest.json"), "utf8"));
+const calls = new Map(loadCorpus(cfg).map((c) => [c.id, c]));
 
 // Normalize quotes, dashes and whitespace so a verbatim check survives typography differences.
 const norm = (s) => s.replace(/[‘’ʼ`]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-")
@@ -31,7 +35,7 @@ function locate(call, quote, preferred) {
     const raw = t.text;
     let normText = "", map = [];
     for (let i = 0; i < raw.length; i++) {
-      const n = norm(raw[i] === " " || /\s/.test(raw[i]) ? " " : raw[i]) || " ";
+      const n = norm(/\s/.test(raw[i]) ? " " : raw[i]) || " ";
       if (n === " " && normText.endsWith(" ")) continue;
       normText += n; map.push(i);
     }
@@ -41,6 +45,7 @@ function locate(call, quote, preferred) {
   return null;
 }
 
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 fs.rmSync(DB_PATH, { force: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec(`
@@ -75,8 +80,8 @@ const batchOf = new Map();
 for (const b of manifest.batches) for (const id of b.callIds) batchOf.set(id, b.id);
 
 for (const c of calls.values()) {
-  const a = c.account, o = c.opportunity;
-  insAcct.run(a.id, a.name, a.segment, a.industry, a.region, a.employees, a.arr);
+  const a = c.account ?? {}, o = c.opportunity;
+  insAcct.run(a.id ?? c.accountId, a.name ?? null, a.segment ?? null, a.industry ?? null, a.region ?? null, a.employees ?? null, a.arr ?? null);
   if (o) insOpp.run(o.id, o.accountId, o.name, o.stage, o.outcome, o.competitor, o.amount, o.closeDate);
   insCall.run(c.id, c.accountId, c.opportunityId, c.callType, c.occurredAt, c.durationMinutes, c.wordCount, c.sha256, batchOf.get(c.id));
   for (const t of c.turns) insTurn.run(c.id, t.turn, t.speaker, t.role, t.text);
@@ -84,10 +89,11 @@ for (const c of calls.values()) {
 
 const done = new Set();
 const stats = { insights: 0, verified: 0, relocated: 0, unverified: 0 };
+let resultFiles = 0;
 for (const b of manifest.batches) {
-  const file = path.join(WORK, b.result);
+  const file = path.join(cfg.paths.work, b.result);
   let result;
-  try { result = JSON.parse(fs.readFileSync(file, "utf8")); }
+  try { result = JSON.parse(fs.readFileSync(file, "utf8")); resultFiles++; }
   catch (e) { insIssue.run(null, b.id, `result unreadable: ${e.message}`); continue; }
   const expected = new Set(b.callIds);
 
@@ -106,12 +112,12 @@ for (const b of manifest.batches) {
 
     const maxTurn = call.turns.length;
     const okTurns = (arr) => (Array.isArray(arr) ? arr : []).filter((n) => Number.isInteger(n) && n >= 1 && n <= maxTurn);
-    insAnalysis.run(r.call_id, r.summary, r.customer_sentiment, Math.max(-2, Math.min(2, Math.round(r.sentiment_score ?? 0))),
+    insAnalysis.run(r.call_id, r.summary, r.customer_sentiment, Math.max(SMIN, Math.min(SMAX, Math.round(r.sentiment_score ?? 0))),
       r.sentiment_rationale, JSON.stringify(okTurns(r.sentiment_turns)), JSON.stringify(r.competitors_mentioned ?? []),
       r.next_step ?? null, JSON.stringify(okTurns(r.label_noise_turns)));
 
     for (const i of r.insights) {
-      const theme = THEMES.includes(i.theme) ? i.theme : THEME_ALIASES[i.theme] ?? "other";
+      const theme = THEMES.includes(i.theme) ? i.theme : THEME_ALIASES[i.theme] ?? FALLBACK_THEME;
       if (theme !== i.theme) insIssue.run(r.call_id, b.id, `theme ${i.theme} normalized to ${theme}`);
       const type = TYPES.includes(i.type) ? i.type : "pain_point";
       const turns = okTurns(i.turns);
@@ -131,14 +137,21 @@ for (const b of manifest.batches) {
 for (const id of manifest.callIds) if (!done.has(id)) insCov.run(id, batchOf.get(id), "missing", "no result returned");
 
 const cov = Object.fromEntries(db.prepare("SELECT status, COUNT(*) n FROM coverage GROUP BY status").all().map((r) => [r.status, r.n]));
-const meta = { loadedAt: new Date().toISOString(), expectedCalls: manifest.expectedCalls, coverage: cov, evidence: stats };
+const meta = {
+  loadedAt: new Date().toISOString(), config: cfg.configFile, name: cfg.name, expectedCalls: manifest.expectedCalls,
+  batches: manifest.batches.length, resultFiles, coverage: cov, evidence: stats,
+};
 for (const [k, v] of Object.entries(meta)) db.prepare("INSERT INTO run_meta VALUES (?,?)").run(k, JSON.stringify(v));
 db.exec("COMMIT");
 
 // Machine-readable coverage manifest: one row per slice call.
 const rows = db.prepare("SELECT call_id, batch_id, status, reason FROM coverage ORDER BY call_id").all();
-fs.writeFileSync(path.join(ROOT, "reports/coverage-manifest.json"), JSON.stringify({ ...meta, calls: rows }, null, 2));
+fs.writeFileSync(cfg.paths.coverage, JSON.stringify({ ...meta, calls: rows }, null, 2));
 console.log(JSON.stringify(meta, null, 2));
 const issues = db.prepare("SELECT COUNT(*) n FROM validation_issues").get().n;
 console.log(`validation issues: ${issues} (see validation_issues table)`);
-if ((cov.analyzed ?? 0) !== manifest.expectedCalls) process.exitCode = 2;
+console.log(`wrote ${path.relative(ROOT, DB_PATH)} and ${path.relative(ROOT, cfg.paths.coverage)}`);
+if ((cov.analyzed ?? 0) !== manifest.expectedCalls) {
+  console.error(`FAIL: ${cov.analyzed ?? 0} of ${manifest.expectedCalls} calls analyzed`);
+  process.exitCode = 2;
+}

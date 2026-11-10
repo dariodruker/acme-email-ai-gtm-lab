@@ -1,4 +1,4 @@
-<title>ACME Email Call Review</title>
+<title>__TITLE__</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -214,17 +214,15 @@ footer { padding-block: 26px 40px; color: var(--muted); font: 400 12px var(--mon
 <script type="application/json" id="data">__DATA__</script>
 <script>
 const D = JSON.parse(document.getElementById("data").textContent);
-const THEMES = {
-  campaigns: "Campaigns", segmentation_scoring: "Segmentation and scoring", nurture_journeys: "Nurture journeys",
-  crm_sync: "CRM sync", attribution_reporting: "Attribution and reporting", forms_landing_pages: "Forms and landing pages",
-  consent_privacy: "Consent and privacy", deliverability: "Deliverability", security_governance: "Security and governance",
-  pricing_packaging: "Pricing and packaging", migration_onboarding: "Migration and onboarding",
-  support_service: "Support and service", usability_adoption: "Usability and adoption", integrations_data: "Integrations and data",
-  competition: "Competition",
-  other: "Other",
-};
+// Themes, sentiment labels and scale come from the run config via build-page.mjs.
+const THEMES = D.meta.themes;
 const TYPES = { pain_point: "Pain point", feature_request: "Request", praise: "Praise", objection: "Objection", risk: "Risk", competitive: "Competitive" };
-const SENTS = ["negative", "mixed", "neutral", "positive"];
+const SENTS = D.meta.scale.labels;
+const SCALE = D.meta.scale;
+// The lower half of the label list counts as the negative side (default: negative, mixed).
+const NEGSIDE = SENTS.slice(0, Math.floor(SENTS.length / 2));
+const negSide = (counts) => NEGSIDE.reduce((n, k) => n + (counts[k] || 0), 0);
+const scaleText = `${SCALE.min < 0 ? "\u2212" + Math.abs(SCALE.min) : SCALE.min} to +${SCALE.max}`;
 const SEGS = ["SMB", "Mid-market", "Enterprise"];
 const segSlug = (s) => s === "all" ? "all" : s.toLowerCase();
 const slugSeg = { all: "all", smb: "SMB", "mid-market": "Mid-market", enterprise: "Enterprise" };
@@ -244,7 +242,7 @@ const analyzed = D.calls.filter((c) => c.status === "analyzed");
 const notAnalyzed = D.calls.filter((c) => c.status !== "analyzed");
 
 function segCalls(seg) { return seg === "all" ? analyzed : analyzed.filter((c) => c.seg === seg); }
-function sentCounts(list) { const o = { negative: 0, mixed: 0, neutral: 0, positive: 0 }; list.forEach((c) => o[c.sent]++); return o; }
+function sentCounts(list) { const o = Object.fromEntries(SENTS.map((k) => [k, 0])); list.forEach((c) => o[c.sent]++); return o; }
 function sbar(list) {
   const s = sentCounts(list), n = list.length;
   const title = SENTS.map((k) => `${k} ${s[k]}`).join(", ");
@@ -289,8 +287,8 @@ function overview() {
 
   const reads = [
     { t: `${esc(THEMES[byNeg[0].th])} is the most common source of negative signal: ${byNeg[0].neg.size} of ${n} calls.`,
-      sub: `${esc(THEMES[byNeg[1].th])} (${byNeg[1].neg.size}) and ${esc(THEMES[byNeg[2].th])} (${byNeg[2].neg.size}) follow.`, href: `seg-all-t-${thSlug(byNeg[0].th)}` },
-    { t: `${esc(lowest.g)} calls have the lowest average sentiment: ${sign(lowest.score)} on a −2 to +2 scale.`,
+      sub: byNeg.length > 2 ? `${esc(THEMES[byNeg[1].th])} (${byNeg[1].neg.size}) and ${esc(THEMES[byNeg[2].th])} (${byNeg[2].neg.size}) follow.` : "", href: `seg-all-t-${thSlug(byNeg[0].th)}` },
+    { t: `${esc(lowest.g)} calls have the lowest average sentiment: ${sign(lowest.score)} on a ${scaleText} scale.`,
       sub: segRows.map((r) => `${esc(r.g)} ${sign(r.score)}`).join(" · "), href: `seg-${segSlug(lowest.g)}` },
     { t: `Calls that ended positive won ${pct(posWin.won, posWin.n)}% of closed deals; calls that ended negative won ${pct(negWin.won, negWin.n)}%.`,
       sub: `Closed-won or closed-lost opportunities only: ${posWin.n} positive and ${negWin.n} negative calls. CRM outcomes were hidden from the subagents.`, href: "seg-all" },
@@ -305,7 +303,7 @@ function overview() {
         const sc = sentCounts(r.list), w = winRate(r.list);
         return `<tr class="click" data-href="seg-${segSlug(r.g)}"><td><a href="#seg-${segSlug(r.g)}">${r.g === "all" ? "All segments" : esc(r.g)}</a></td>
           <td class="r">${r.list.length}</td><td>${sbar(r.list)}</td><td class="r">${sign(r.score)}</td>
-          <td class="r hide-sm">${pct(sc.negative + sc.mixed, r.list.length)}%<span class="sub">neg + mixed</span></td>
+          <td class="r hide-sm">${pct(negSide(sc), r.list.length)}%<span class="sub">${NEGSIDE.join(" + ")}</span></td>
           <td class="r">${pct(w.won, w.n)}%<span class="sub">${w.won} of ${w.n} closed</span></td></tr>`;
       }).join("")}</tbody></table></div>`;
 
@@ -332,9 +330,9 @@ function overview() {
 
   return `
   <section class="hero"><div class="wrap">
-    <p class="kicker">ACME Email · class slice · ${fmtDate(dates[0])} to ${fmtDate(dates[dates.length - 1])}</p>
+    <p class="kicker">${esc(D.meta.name)} · ${fmtDate(dates[0])} to ${fmtDate(dates[dates.length - 1])}</p>
     <h1>What ${n} customer calls say about ACME Email</h1>
-    <p class="lede">${pct(s.negative + s.mixed, n)}% of calls ended with the customer <strong>negative or mixed</strong> on ACME. The biggest source of friction is <strong>${esc(THEMES[byNeg[0].th]).toLowerCase()}</strong>, and the gap shows up in win rates. Pick a segment or theme to see the calls behind each number.</p>
+    <p class="lede">${pct(negSide(s), n)}% of calls ended with the customer <strong>${NEGSIDE.join(" or ")}</strong> on ACME. The biggest source of friction is <strong>${esc(THEMES[byNeg[0].th]).toLowerCase()}</strong>, and the gap shows up in win rates. Pick a segment or theme to see the calls behind each number.</p>
     <div class="meta-row"><span>${D.calls.length} calls</span><span>${D.insights.length} insights</span><span>${D.meta.batches} Sonnet batches</span><span>SQLite</span></div>
   </div></section>
   ${coverageStrip()}
@@ -418,8 +416,8 @@ function segmentView(segKey, themeKey, sentFilter) {
     <nav class="tabs" aria-label="Segment">${tabs}</nav>
     <dl class="seg-summary">
       <div><dt>Calls</dt><dd>${all.length}</dd></div>
-      <div><dt>Avg sentiment</dt><dd>${sign(avg(all.map((c) => c.score)))} <small>of ±2</small></dd></div>
-      <div><dt>Negative or mixed</dt><dd>${pct(sc.negative + sc.mixed, all.length)}%</dd></div>
+      <div><dt>Avg sentiment</dt><dd>${sign(avg(all.map((c) => c.score)))} <small>${scaleText}</small></dd></div>
+      <div><dt>${NEGSIDE.join(" or ")}</dt><dd>${pct(negSide(sc), all.length)}%</dd></div>
       <div><dt>Win rate, closed</dt><dd>${pct(w.won, w.n)}% <small>${w.won}/${w.n}</small></dd></div>
     </dl>
     ${legend()}${sbar(all)}
@@ -466,7 +464,7 @@ function callView(id) {
       ${flags.length ? `<div class="flags">${flags.map((f) => `<span>${f}</span>`).join("")}</div>` : ""}</div></div>`;
   }).join("");
 
-  const scoreBar = [-2, -1, 0, 1, 2].map((v) => `<i class="${c.score != null && ((c.score < 0 && v < 0 && v >= c.score) || (c.score > 0 && v > 0 && v <= c.score) || (v === 0 && c.score === 0)) ? `on s-${c.sent}` : ""}"></i>`).join("");
+  const scoreBar = Array.from({ length: SCALE.max - SCALE.min + 1 }, (_, k) => SCALE.min + k).map((v) => `<i class="${c.score != null && ((c.score < 0 && v < 0 && v >= c.score) || (c.score > 0 && v > 0 && v <= c.score) || (v === 0 && c.score === 0)) ? `on s-${c.sent}` : ""}"></i>`).join("");
   const comps = [...new Set([...(c.comps || []), ...(c.crmComp ? [c.crmComp] : [])])];
 
   const panel = c.status !== "analyzed" ? `<section><p class="unver">Not analyzed: ${esc(c.reason)}</p></section>` : `

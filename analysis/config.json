@@ -1,0 +1,36 @@
+{
+  "name": "ACME Email class slice",
+  "pageTitle": "ACME Email Call Review",
+  "dataDir": "data/generated",
+  "sliceFile": "data/class-slice.txt",
+  "outputDir": "reports",
+  "workDir": "work/call-analysis",
+  "pageFile": "acme-call-insights.html",
+  "batchSize": 20,
+  "hideFromSubagents": ["stage", "outcome", "competitor", "amount", "closeDate"],
+  "sentimentScale": {
+    "min": -2,
+    "max": 2,
+    "labels": ["negative", "mixed", "neutral", "positive"]
+  },
+  "themesApprovedFor": "data/generated",
+  "themes": [
+    { "key": "campaigns", "label": "Campaigns" },
+    { "key": "segmentation_scoring", "label": "Segmentation and scoring" },
+    { "key": "nurture_journeys", "label": "Nurture journeys" },
+    { "key": "crm_sync", "label": "CRM sync" },
+    { "key": "attribution_reporting", "label": "Attribution and reporting" },
+    { "key": "forms_landing_pages", "label": "Forms and landing pages" },
+    { "key": "consent_privacy", "label": "Consent and privacy" },
+    { "key": "deliverability", "label": "Deliverability" },
+    { "key": "security_governance", "label": "Security and governance" },
+    { "key": "pricing_packaging", "label": "Pricing and packaging" },
+    { "key": "migration_onboarding", "label": "Migration and onboarding" },
+    { "key": "support_service", "label": "Support and service" },
+    { "key": "usability_adoption", "label": "Usability and adoption" },
+    { "key": "integrations_data", "label": "Integrations and data" },
+    { "key": "competition", "label": "Competition" },
+    { "key": "other", "label": "Other" }
+  ],
+  "themeAliases": { "competitive": "competition", "competitor": "competition", "competitors": "competition" }
+}
